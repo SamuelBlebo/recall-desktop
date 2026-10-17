@@ -4,14 +4,14 @@ An offline, Anki-style flashcard app for your PC. Built with Tauri 2, React, Typ
 
 ## One-time setup on Windows
 
-1. **Node.js**: install the LTS version from nodejs.org.
+1. **Node.js**: install the LTS version from nodejs.org, then install pnpm with `npm install -g pnpm`.
 2. **Rust**: install from rustup.rs. When it asks, let it install the **Visual Studio C++ Build Tools** ("Desktop development with C++").
 3. **WebView2**: already built into Windows 10 and 11.
 
 Then open a terminal in this folder and run:
 
 ```bash
-npm install
+pnpm install
 ```
 
 This step and step 3 need internet once. After that, the app itself never uses the internet.
@@ -19,7 +19,7 @@ This step and step 3 need internet once. After that, the app itself never uses t
 ## Run it
 
 ```bash
-npm run tauri dev
+pnpm tauri dev
 ```
 
 The first run compiles Rust and takes a few minutes. Later runs are fast.
@@ -27,14 +27,14 @@ The first run compiles Rust and takes a few minutes. Later runs are fast.
 ## Make the installer (.exe)
 
 ```bash
-npm run tauri build
+pnpm tauri build
 ```
 
 The installer is created at `src-tauri/target/release/bundle/nsis/Recall_0.1.0_x64-setup.exe`. Install it and Recall appears in your Start menu like any other app.
 
 ## Preview in a browser (optional)
 
-`npm run dev`, then open http://localhost:1420. In the browser, data is saved in browser storage instead of SQLite. This mode is useful for quick UI changes.
+`pnpm dev`, then open http://localhost:1420. In the browser, data is saved in browser storage instead of SQLite. This mode is useful for quick UI changes.
 
 ## Where your data lives
 
