@@ -1,0 +1,55 @@
+CREATE TABLE IF NOT EXISTS decks (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id INTEGER,
+  position INTEGER NOT NULL DEFAULT 0,
+  collapsed INTEGER NOT NULL DEFAULT 0,
+  created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL,
+  front TEXT NOT NULL,
+  back TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '',
+  created INTEGER NOT NULL,
+  modified INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cards (
+  id INTEGER PRIMARY KEY,
+  note_id INTEGER NOT NULL,
+  deck_id INTEGER NOT NULL,
+  ord INTEGER NOT NULL,
+  state INTEGER NOT NULL DEFAULT 0,
+  due INTEGER NOT NULL,
+  stability REAL NOT NULL DEFAULT 0,
+  difficulty REAL NOT NULL DEFAULT 0,
+  elapsed_days INTEGER NOT NULL DEFAULT 0,
+  scheduled_days INTEGER NOT NULL DEFAULT 0,
+  learning_steps INTEGER NOT NULL DEFAULT 0,
+  reps INTEGER NOT NULL DEFAULT 0,
+  lapses INTEGER NOT NULL DEFAULT 0,
+  last_review INTEGER,
+  flag INTEGER NOT NULL DEFAULT 0,
+  suspended INTEGER NOT NULL DEFAULT 0,
+  skipped INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_cards_note ON cards(note_id);
+CREATE INDEX IF NOT EXISTS idx_cards_deck ON cards(deck_id);
+CREATE TABLE IF NOT EXISTS revlog (
+  id INTEGER PRIMARY KEY,
+  card_id INTEGER NOT NULL,
+  deck_id INTEGER NOT NULL,
+  time INTEGER NOT NULL,
+  rating INTEGER NOT NULL,
+  state_before INTEGER NOT NULL,
+  elapsed_days INTEGER NOT NULL DEFAULT 0,
+  scheduled_days INTEGER NOT NULL DEFAULT 0,
+  duration_ms INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_revlog_time ON revlog(time);
+CREATE INDEX IF NOT EXISTS idx_revlog_card ON revlog(card_id);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
