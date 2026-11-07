@@ -153,7 +153,11 @@ export function BrowsePage() {
                   {shown.map((c) => {
                     const n = S.notes.get(c.noteId);
                     return (
-                      <tr key={c.id} className={`brow ${sel?.id === c.id ? "sel" : ""}`} onClick={() => setNav({ browseSel: c.id })}>
+                      <tr key={c.id} className={`brow ${sel?.id === c.id ? "sel" : ""}`} onClick={() => {
+                        setNav({ browseSel: c.id });
+                        // on phones the editor sits below the list
+                        if (matchMedia("(max-width: 760px)").matches) setTimeout(() => document.getElementById("browse-panel")?.scrollIntoView({ behavior: "smooth" }), 0);
+                      }}>
                         <td onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" aria-label="Select card" checked={checked.has(c.id)}
                             onChange={(e) => { const s = new Set(checked); if (e.target.checked) s.add(c.id); else s.delete(c.id); setChecked(s); }} />
@@ -180,7 +184,7 @@ export function BrowsePage() {
           </div>
         </div>
 
-        <div className="card pad">
+        <div className="card pad" id="browse-panel">
           {sel ? <CardPanel card={sel} /> : (
             <>
               <p className="ptitle" style={{ fontSize: 15 }}>Card editor</p>

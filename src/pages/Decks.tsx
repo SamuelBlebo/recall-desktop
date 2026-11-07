@@ -33,7 +33,7 @@ function DeckRows({ parent, depth }: { parent: number | null; depth: number }) {
         return (
           <Fragment key={d.id}>
             <tr>
-              <td style={{ paddingLeft: 14 + depth * 22 }}>
+              <td style={{ paddingLeft: `calc(var(--cellx) + ${depth} * var(--indent))` }}>
                 {kids ? (
                   <button className="tog" onClick={() => toggleCollapsed(d.id)} aria-label={d.collapsed ? "Expand" : "Collapse"}>{d.collapsed ? "▸" : "▾"}</button>
                 ) : <span style={{ display: "inline-block", width: 20 }} />}
@@ -42,10 +42,10 @@ function DeckRows({ parent, depth }: { parent: number | null; depth: number }) {
               <td className={`num n ${k.newCount ? "" : "z"}`}>{k.newCount}</td>
               <td className={`num l ${k.learn ? "" : "z"}`}>{k.learn}</td>
               <td className={`num d ${k.due ? "" : "z"}`}>{k.due}</td>
-              <td><Status due={k.due + k.learn} fresh={k.newCount} /></td>
-              <td style={{ width: 130 }}>
+              <td className="hidem"><Status due={k.due + k.learn} fresh={k.newCount} /></td>
+              <td className="deckacts">
                 <div className="row" style={{ justifyContent: "flex-end", flexWrap: "nowrap", gap: 6 }}>
-                <button className="btn sm" onClick={() => study(d.id)}>Study</button>
+                <button className="btn sm hidem" onClick={() => study(d.id)}>Study</button>
                 <Menu items={[
                   ["Add cards here", () => go("add", { addDeck: d.id })],
                   ["Browse cards", () => go("browse", { browseQuery: `deck:${deckFullName(d.id).replace(/ /g, "_")}`, browseSel: null })],
@@ -107,8 +107,8 @@ export function DecksPage() {
       <div className="card pad mt" style={{ paddingBottom: 8 }}>
         <p className="ptitle">Your decks</p>
         <p className="psub" style={{ marginBottom: 8 }}>Click a deck to study it. <span className="n">New</span> · <span className="l">Learning</span> · <span className="d">Due</span></p>
-        <table>
-          <thead><tr><th>Deck</th><th className="num">New</th><th className="num">Learn</th><th className="num">Due</th><th>Status</th><th /></tr></thead>
+        <table className="decktable">
+          <thead><tr><th>Deck</th><th className="num">New</th><th className="num">Learn</th><th className="num">Due</th><th className="hidem">Status</th><th /></tr></thead>
           <tbody><DeckRows parent={null} depth={0} /></tbody>
         </table>
       </div>
