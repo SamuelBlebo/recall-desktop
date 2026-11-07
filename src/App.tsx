@@ -11,11 +11,15 @@ import { SettingsPage } from "./pages/Settings";
 import { Palette, paletteOpen, setPalette } from "./components/Palette";
 import { openImport } from "./components/ImportCsv";
 import { Icon, ModalHost, Toasts, anyModalOpen, go, useNav, type View } from "./components/ui";
+import { WebSignIn } from "./components/Account";
+import { cloudConfigured } from "./lib/cloud/config";
+import { syncLabel, useSync } from "./lib/cloud/status";
 
 const NAV: [View, string][] = [["decks", "Decks"], ["study", "Study"], ["browse", "Browse"], ["add", "Add cards"]];
 
 function Side() {
   const nav = useNav();
+  const sync = useSync();
   const k = counts(deckWithChildren("all"));
   const due = k.due + k.learn;
   const btn = ([v, label]: [View, string]) => (
@@ -35,7 +39,7 @@ function Side() {
         {btn(["settings", "Settings"])}
         <div className="user">
           <div className="av">{(S.settings.profileName || "?").slice(0, 1).toUpperCase()}</div>
-          <div><b>{S.settings.profileName || "You"}</b><span>{S.storage === "sqlite" ? "Offline · saved on this PC" : "Browser preview"}</span></div>
+          <div><b>{S.settings.profileName || "You"}</b><span>{sync.state !== "off" && sync.state !== "signedOut" ? syncLabel(sync) : S.storage === "sqlite" ? "Offline · saved on this PC" : "This browser only"}</span></div>
         </div>
       </div>
     </aside>
@@ -49,6 +53,14 @@ const PAGES: Record<View, () => JSX.Element> = {
 export default function App() {
   const s = useStore();
   const nav = useNav();
+  const sync = useSync();
+  const [skipSignIn, setSkipSignIn] = useState(() => {
+    try {
+      return localStorage.getItem("recall-skip-signin") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [dragging, setDragging] = useState(false);
 
   // global shortcuts
@@ -132,6 +144,17 @@ export default function App() {
       </div>
     );
   if (!s.ready) return <div className="loading">Loading your cards…</div>;
+  if (!isDesktop() && cloudConfigured() && sync.state === "signedOut" && !skipSignIn)
+    return (
+      <WebSignIn onSkip={() => {
+        try {
+          localStorage.setItem("recall-skip-signin", "1");
+        } catch {
+          /* ignore */
+        }
+        setSkipSignIn(true);
+      }} />
+    );
 
   const Page = PAGES[nav.view];
   return (

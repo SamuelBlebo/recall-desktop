@@ -6,7 +6,7 @@ import { toast } from "./toast";
 import { newId } from "./util";
 import {
   DEFAULT_SETTINGS, NEW, REVIEW,
-  type Card, type Deck, type Grade, type Note, type NoteKind, type Revlog, type Settings, type Snapshot,
+  type Card, type Deck, type Grade, type Note, type NoteKind, type RemoteChanges, type Revlog, type Settings, type Snapshot,
 } from "./types";
 
 interface State {
@@ -78,6 +78,31 @@ export async function init() {
   } catch (e) {
     console.error(e);
     S.loadError = String((e as Error)?.message || e);
+  }
+  bump();
+  if (S.ready && "start" in P) (P as Persist & { start(f: typeof applyRemote): void }).start(applyRemote);
+}
+
+/** Merges changes made on another device into memory (the sync layer saves them locally). */
+export function applyRemote(ch: RemoteChanges) {
+  const merge = <T extends { id: number }>(list: T[], add: T[], del: number[]) => {
+    if (!add.length && !del.length) return list;
+    const m = new Map(list.map((x) => [x.id, x]));
+    add.forEach((x) => m.set(x.id, x));
+    del.forEach((id) => m.delete(id));
+    return [...m.values()];
+  };
+  S.decks = merge(S.decks, ch.decks, ch.del.decks);
+  ch.notes.forEach((n) => S.notes.set(n.id, n));
+  ch.del.notes.forEach((id) => S.notes.delete(id));
+  const deadNotes = new Set(ch.del.notes);
+  S.cards = merge(S.cards, ch.cards, ch.del.cards).filter((c) => !deadNotes.has(c.noteId));
+  S.revlog = merge(S.revlog, ch.revlog, ch.del.revlog);
+  if (ch.revlog.length) S.revlog.sort((a, b) => a.time - b.time);
+  if (ch.settings) {
+    S.settings = { ...S.settings, ...ch.settings, lastBackup: S.settings.lastBackup };
+    configureScheduler(S.settings);
+    applyTheme();
   }
   bump();
 }

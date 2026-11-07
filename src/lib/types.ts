@@ -99,5 +99,15 @@ export interface Snapshot {
   settings: Partial<Settings>;
 }
 
+/** Changes pulled from the cloud (made on another device). */
+export interface RemoteChanges {
+  decks: Deck[];
+  notes: Note[];
+  cards: Card[];
+  revlog: Revlog[];
+  settings?: Partial<Settings>;
+  del: { decks: number[]; notes: number[]; cards: number[]; revlog: number[] };
+}
+
 export const MIN = 60_000;
 export const DAY = 86_400_000;

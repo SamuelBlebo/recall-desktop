@@ -36,6 +36,19 @@ The installer is created at `src-tauri/target/release/bundle/nsis/Recall_0.1.0_x
 
 `pnpm dev`, then open http://localhost:1420. In the browser, data is saved in browser storage instead of SQLite. This mode is useful for quick UI changes.
 
+## Web version and sync
+
+The web version is at **https://recall-dp-app.web.app** (Firebase project `recall-dp-app`).
+
+Sign in with the same email and password in the desktop app (Settings → Cloud sync) and on the web. Every change is mirrored to Firestore and other signed-in devices pick it up within seconds. Each device keeps its own local copy, so the app still works offline and catches up when it reconnects. The first sign-in on a device uploads the cards already on it.
+
+To publish a new web version:
+
+```bash
+pnpm build
+firebase deploy
+```
+
 ## Where your data lives
 
 - **Collection:** `%APPDATA%\com.blebo.recall\recall.db`

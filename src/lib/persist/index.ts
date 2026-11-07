@@ -1,8 +1,9 @@
 import type { Card, Deck, Note, Revlog, Settings, Snapshot } from "../types";
+import { cloudConfigured } from "../cloud/config";
 
 /**
  * Storage backend. The desktop app uses SQLite (sqlite.ts);
- * running `npm run dev` in a normal browser uses localStorage (local.ts).
+ * the web version uses IndexedDB (local.ts). Either can be wrapped with cloud sync (cloud/sync.ts).
  */
 export interface Persist {
   kind: "sqlite" | "browser";
@@ -26,11 +27,19 @@ export interface Persist {
 
 export const isDesktop = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-export async function createPersist(getSnapshot: () => Snapshot): Promise<Persist> {
+async function createLocal(getSnapshot: () => Snapshot): Promise<Persist> {
   if (isDesktop()) {
     const { SqlitePersist } = await import("./sqlite");
     return SqlitePersist.open();
   }
   const { BrowserPersist } = await import("./local");
   return new BrowserPersist(getSnapshot);
+}
+
+/** Local storage, wrapped with cloud sync when Firebase is configured. */
+export async function createPersist(getSnapshot: () => Snapshot): Promise<Persist> {
+  const local = await createLocal(getSnapshot);
+  if (!cloudConfigured()) return local;
+  const { SyncedPersist } = await import("../cloud/sync");
+  return new SyncedPersist(local, getSnapshot);
 }

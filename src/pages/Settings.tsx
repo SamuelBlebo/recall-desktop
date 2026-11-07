@@ -6,6 +6,7 @@ import { toast } from "../lib/toast";
 import { openImport } from "../components/ImportCsv";
 import { deckOptions } from "../components/NoteEditor";
 import { confirmDialog } from "../components/ui";
+import { SyncCard } from "../components/Account";
 import type { Settings } from "../lib/types";
 
 /** Reviews per day relative to the 90% default (from FSRS's interval formula). */
@@ -72,7 +73,7 @@ export function SettingsPage() {
 
           <p className="ptitle" style={{ fontSize: 15, marginTop: 22 }}>Backups</p>
           <p className="psub small">
-            {S.storage === "sqlite" ? "Saved automatically on this PC. " : "Browser preview mode: data is kept in this browser only. "}
+            {S.storage === "sqlite" ? "Saved automatically on this PC. " : "Saved in this browser. "}
             Last backup: {s.lastBackup ? new Date(s.lastBackup).toLocaleString() : "never"}
           </p>
           <div className="row" style={{ marginTop: 8 }}>
@@ -83,6 +84,8 @@ export function SettingsPage() {
           <Num label="Backups to keep" k="keepBackups" min={3} max={500} />
         </div>
       </div>
+
+      <SyncCard />
 
       <div className="card pad mt">
         <p className="ptitle" style={{ fontSize: 15 }}>Import &amp; export</p>
@@ -113,7 +116,7 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
-      <p className="psub small" style={{ marginTop: 16 }}>Recall {__APP_VERSION__} · works fully offline · storage: {S.storage === "sqlite" ? "SQLite on this PC" : "browser (preview)"}</p>
+      <p className="psub small" style={{ marginTop: 16 }}>Recall {__APP_VERSION__} · works offline · storage: {S.storage === "sqlite" ? "SQLite on this PC" : "this browser"}</p>
     </>
   );
 }

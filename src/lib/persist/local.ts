@@ -3,27 +3,62 @@ import type { Snapshot } from "../types";
 
 const KEY = "recall-desktop-v1";
 
-/** Browser fallback used by `npm run dev` outside the desktop shell. */
+// IndexedDB holds far more than localStorage's ~5 MB, which a big collection can outgrow.
+function idb(): Promise<IDBDatabase> {
+  return new Promise((ok, fail) => {
+    const r = indexedDB.open("recall", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => fail(r.error);
+  });
+}
+async function idbGet<T>(key: string): Promise<T | undefined> {
+  const db = await idb();
+  return new Promise((ok, fail) => {
+    const r = db.transaction("kv").objectStore("kv").get(key);
+    r.onsuccess = () => ok(r.result as T | undefined);
+    r.onerror = () => fail(r.error);
+  });
+}
+async function idbSet(key: string, value: unknown): Promise<void> {
+  const db = await idb();
+  return new Promise((ok, fail) => {
+    const t = db.transaction("kv", "readwrite");
+    t.objectStore("kv").put(value, key);
+    t.oncomplete = () => ok();
+    t.onerror = () => fail(t.error);
+  });
+}
+
+/** Storage for the web version (outside the desktop shell). */
 export class BrowserPersist implements Persist {
   kind = "browser" as const;
   private timer: ReturnType<typeof setTimeout> | undefined;
   constructor(private getSnapshot: () => Snapshot) {}
 
+  private write = (s: Snapshot) =>
+    idbSet(KEY, s).catch((e) => {
+      console.error("Could not save", e);
+      throw e;
+    });
+
   private schedule = async () => {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(this.getSnapshot()));
-      } catch (e) {
-        console.error("Could not save", e);
-      }
-    }, 250);
+    this.timer = setTimeout(() => void this.write(this.getSnapshot()).catch(() => {}), 250);
   };
 
   async load(): Promise<Snapshot> {
     try {
+      const s = await idbGet<Snapshot>(KEY);
+      if (s) return s;
+      // move data saved by older versions out of localStorage
       const raw = localStorage.getItem(KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const old = JSON.parse(raw) as Snapshot;
+        await this.write(old);
+        localStorage.removeItem(KEY);
+        return old;
+      }
     } catch {
       /* start empty */
     }
@@ -40,7 +75,7 @@ export class BrowserPersist implements Persist {
   deleteRevlog = this.schedule;
   saveSettings = this.schedule;
   replaceAll = async (s: Snapshot) => {
-    localStorage.setItem(KEY, JSON.stringify(s));
+    await this.write(s);
   };
 
   backup = async () => {
