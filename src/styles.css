@@ -135,7 +135,13 @@ svg text { fill: var(--mute); font-size: 10px; }
 .sbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .prog { height: 3px; background: var(--line); border-radius: 4px; overflow: hidden; flex: 1; }
 .prog i { display: block; height: 100%; background: var(--ink); }
-.face { min-height: 320px; padding: 44px 40px; font-size: 22px; line-height: 1.55; text-align: center; display: flex; flex-direction: column; justify-content: center; border-radius: 22px; overflow-wrap: anywhere; }
+.face { min-height: 320px; padding: 44px 40px; font-size: 22px; line-height: 1.55; text-align: center; display: flex; flex-direction: column; justify-content: center; border-radius: 22px; overflow-wrap: break-word; }
+.face > * { min-width: 0; max-width: 100%; }
+.face.long { text-align: left; font-size: 19px; }
+/* math: display equations scroll sideways instead of overflowing the card */
+.katex { font-size: 1.1em; }
+.math-d { overflow-x: auto; overflow-y: hidden; max-width: 100%; text-align: center; }
+.math-d .katex-display { margin: 0.6em 0; }
 .face hr { border: 0; border-top: 1px solid var(--line); margin: 22px 0; }
 .cz { color: var(--cz); font-weight: 700; }
 .cz.on { background: var(--acc2); padding: 0 4px; border-radius: 4px; }
@@ -213,6 +219,8 @@ svg text { fill: var(--mute); font-size: 10px; }
   .astat { padding: 2px 12px; }
   .act svg { max-width: 100%; height: auto; }
   .face { min-height: 220px; padding: 28px 18px; font-size: 19px; }
+  .face.long { font-size: 16.5px; line-height: 1.6; padding: 22px 16px; }
+  .face .katex { font-size: 1em; }
   .grades { gap: 6px; }
   .g { padding: 8px 2px; border-radius: 12px; }
   .g b { font-size: 13px; }

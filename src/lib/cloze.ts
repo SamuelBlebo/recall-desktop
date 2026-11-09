@@ -1,5 +1,6 @@
 import type { Card, Note } from "./types";
 import { esc, nl2br } from "./util";
+import { renderMath } from "./math";
 
 const CZ = () => /\{\{c(\d+)::([\s\S]*?)(?:::([\s\S]*?))?\}\}/g;
 
@@ -24,8 +25,13 @@ export interface Faces {
   expected?: string; // for type-in cards
 }
 
-/** Builds the HTML for both sides of a card. All user text is escaped. */
+/** Builds the HTML for both sides of a card, with LaTeX typeset. All user text is escaped. */
 export function renderCard(note: Note, card: Pick<Card, "ord">): Faces {
+  const f = buildFaces(note, card);
+  return { ...f, question: renderMath(f.question), answer: renderMath(f.answer) };
+}
+
+function buildFaces(note: Note, card: Pick<Card, "ord">): Faces {
   if (note.kind === "cloze") {
     const side = (reveal: boolean) =>
       nl2br(
