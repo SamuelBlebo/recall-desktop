@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useState, type JSX } from "react";
 import { S, deckWithChildren, useStore } from "../lib/store";
 import { counts, reviewedToday } from "../lib/queue";
 import { recallChance } from "../lib/scheduler";
@@ -132,6 +132,8 @@ export function RecallDots({ deckIds }: { deckIds?: Set<number> }) {
 
 /* ---------------- activity panel (top of Decks) ---------------- */
 
+const ACT_KEY = "recall-activity-open";
+
 export function ActivityPanel() {
   useStore();
   const all = counts(deckWithChildren("all"));
@@ -141,14 +143,27 @@ export function ActivityPanel() {
   const stat = (label: string, value: string | number, sub?: string) => (
     <div className="astat"><span>{label}</span><b>{value}</b>{sub && <small>{sub}</small>}</div>
   );
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem(ACT_KEY) !== "0"; } catch { return true; }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try { localStorage.setItem(ACT_KEY, open ? "0" : "1"); } catch { /* preference just won't stick */ }
+  };
   return (
     <div className="card pad">
-      <div className="act">
+      <div className="acthead">
         <div>
           <p className="ptitle">Review activity</p>
-          <p className="psub">This semester · last 4 months</p>
-          <div style={{ marginTop: 10 }}><Heatmap /></div>
+          <p className="psub">
+            {open ? "This semester · last 4 months" : `${all.due + all.learn} due today · ${reviewedToday()} reviewed · ${streak()}-day streak`}
+          </p>
         </div>
+        <button className="btn ghost sm" onClick={toggle} aria-expanded={open}>{open ? "Hide ▴" : "Show ▾"}</button>
+      </div>
+      {open && <>
+      <div className="act">
+        <div style={{ marginTop: 10 }}><Heatmap /></div>
         <div className="astats">
           {stat("Due today", all.due + all.learn)}
           {stat("Reviewed today", reviewedToday())}
@@ -158,6 +173,7 @@ export function ActivityPanel() {
         </div>
       </div>
       <div className="recallsec"><RecallDots /></div>
+      </>}
     </div>
   );
 }

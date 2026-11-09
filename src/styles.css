@@ -116,6 +116,7 @@ tr:last-child td { border-bottom: 0; }
 .menu-pop button:hover { background: var(--panel2); }
 
 /* activity */
+.acthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .act { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 .astats { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); min-width: 300px; }
 .astat { padding: 2px 16px; border-left: 1px solid var(--line); }
