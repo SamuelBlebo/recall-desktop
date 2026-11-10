@@ -1,6 +1,5 @@
 import type { Card, Note } from "./types";
-import { esc, nl2br } from "./util";
-import { renderMath } from "./math";
+import { CZ_HIDE, CZ_HIDE_END, CZ_OFF, CZ_ON, plain, rich } from "./rich";
 
 const CZ = () => /\{\{c(\d+)::([\s\S]*?)(?:::([\s\S]*?))?\}\}/g;
 
@@ -9,8 +8,8 @@ export function clozeOrds(text: string): number[] {
   return [...new Set([...text.matchAll(CZ())].map((m) => Number(m[1])))].sort((a, b) => a - b);
 }
 
-/** Text with all cloze markup removed (for lists and search). */
-export const stripCloze = (text: string) => text.replace(CZ(), "$2");
+/** Plain text with cloze markup and HTML removed (for lists and search). */
+export const stripCloze = (text: string) => plain(text.replace(CZ(), "$2"));
 
 /** Which card ords a note produces. */
 export function noteOrds(kind: Note["kind"], front: string): number[] {
@@ -25,31 +24,22 @@ export interface Faces {
   expected?: string; // for type-in cards
 }
 
-/** Builds the HTML for both sides of a card, with LaTeX typeset. All user text is escaped. */
+/** Builds the HTML for both sides of a card: HTML, Markdown and LaTeX in the text are rendered safely. */
 export function renderCard(note: Note, card: Pick<Card, "ord">): Faces {
-  const f = buildFaces(note, card);
-  return { ...f, question: renderMath(f.question), answer: renderMath(f.answer) };
-}
-
-function buildFaces(note: Note, card: Pick<Card, "ord">): Faces {
   if (note.kind === "cloze") {
     const side = (reveal: boolean) =>
-      nl2br(
-        esc(note.front).replace(CZ(), (_m, n, txt, hint) =>
-          Number(n) === card.ord
-            ? reveal
-              ? `<span class="cz on">${txt}</span>`
-              : `<span class="cz">[${hint || "…"}]</span>`
-            : txt,
+      rich(
+        note.front.replace(CZ(), (_m, n, txt, hint) =>
+          Number(n) === card.ord ? (reveal ? CZ_ON + txt + CZ_OFF : CZ_HIDE + (hint || "…") + CZ_HIDE_END) : txt,
         ),
       );
-    const extra = note.back.trim() ? `<div class="extra">${nl2br(esc(note.back))}</div>` : "";
+    const extra = note.back.trim() ? `<div class="extra">${rich(note.back)}</div>` : "";
     return { question: side(false), answer: side(true) + extra };
   }
   const front = card.ord === 2 ? note.back : note.front;
   const back = card.ord === 2 ? note.front : note.back;
   if (note.kind === "type") {
-    return { question: nl2br(esc(front)), answer: nl2br(esc(front)), expected: back };
+    return { question: rich(front), answer: rich(front), expected: back };
   }
-  return { question: nl2br(esc(front)), answer: `${nl2br(esc(front))}<hr>${nl2br(esc(back))}` };
+  return { question: rich(front), answer: `${rich(front)}<hr>${rich(back)}` };
 }

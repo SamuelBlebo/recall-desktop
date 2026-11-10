@@ -138,10 +138,23 @@ svg text { fill: var(--mute); font-size: 10px; }
 .face { min-height: 320px; padding: 44px 40px; font-size: 22px; line-height: 1.55; text-align: center; display: flex; flex-direction: column; justify-content: center; border-radius: 22px; overflow-wrap: break-word; }
 .face > * { min-width: 0; max-width: 100%; }
 .face.long { text-align: left; font-size: 19px; }
-/* math: display equations scroll sideways instead of overflowing the card */
-.katex { font-size: 1.1em; }
-.math-d { overflow-x: auto; overflow-y: hidden; max-width: 100%; text-align: center; }
-.math-d .katex-display { margin: 0.6em 0; }
+/* math: display equations sit in a soft panel and scroll sideways instead of overflowing the card */
+.katex { font-size: 1.12em; }
+.math-d { overflow-x: auto; overflow-y: hidden; max-width: 100%; margin: 10px 0; padding: 2px 12px; background: var(--panel2); border-radius: 12px; text-align: center; scrollbar-width: thin; }
+.math-d .katex-display { margin: 0.55em 0; }
+/* formatting that comes in with imported cards */
+.face ul, .face ol, .extra ul, .extra ol { display: inline-block; text-align: left; margin: 6px 0; padding-left: 1.3em; }
+.face li { margin: 3px 0; }
+.face.long ul, .face.long ol { display: block; }
+.face p { margin: 0 0 0.6em; }
+.face h1, .face h2, .face h3, .face h4 { font-size: 1.1em; margin: 0.4em 0; }
+.face sup, .face sub { font-size: 0.7em; line-height: 0; }
+.face code { font-size: 0.85em; }
+.face pre { text-align: left; overflow-x: auto; background: var(--panel2); padding: 10px 12px; border-radius: 10px; font-size: 0.8em; }
+.face img { max-width: 100%; height: auto; border-radius: 10px; }
+.face table { border-collapse: collapse; margin: 8px auto; font-size: 0.85em; display: block; overflow-x: auto; max-width: 100%; }
+.face td, .face th { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+.face blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); text-align: left; }
 .face hr { border: 0; border-top: 1px solid var(--line); margin: 22px 0; }
 .cz { color: var(--cz); font-weight: 700; }
 .cz.on { background: var(--acc2); padding: 0 4px; border-radius: 4px; }
@@ -191,6 +204,8 @@ svg text { fill: var(--mute); font-size: 10px; }
 .empty { text-align: center; padding: 60px 20px; }
 .empty .big { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
 .preview-card { margin-top: 10px; padding: 14px; text-align: center; border: 1px solid var(--line); border-radius: 14px; }
+.preview-card img { max-width: 100%; }
+.preview-card .math-d { overflow-x: auto; }
 .preview-card hr { border: 0; border-top: 1px dashed var(--line); }
 .loading { display: grid; place-items: center; height: 100vh; color: var(--mute); }
 

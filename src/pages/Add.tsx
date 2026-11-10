@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { S, addNotes, deckFullName, useStore } from "../lib/store";
 import { clozeOrds, noteOrds, renderCard } from "../lib/cloze";
-import { esc, splitTags } from "../lib/util";
+import { rich } from "../lib/rich";
+import { splitTags } from "../lib/util";
 import { toast } from "../lib/toast";
 import type { NoteKind } from "../lib/types";
 import { KIND_LABEL, deckOptions, wrapCloze } from "../components/NoteEditor";
@@ -118,7 +119,7 @@ export function AddPage() {
               <div dangerouslySetInnerHTML={{ __html: p.question }} />
               {p.expected != null && <div className="z small" style={{ marginTop: 6 }}>[answer box]</div>}
               <hr />
-              <div dangerouslySetInnerHTML={{ __html: p.expected != null ? esc(p.expected) : isCloze ? p.answer : p.answer.split("<hr>").slice(1).join("<hr>") }} />
+              <div dangerouslySetInnerHTML={{ __html: p.expected != null ? rich(p.expected) : isCloze ? p.answer : rich(p.ord === 2 ? front : back) }} />
             </div>
           )) : <p className="psub" style={{ marginTop: 6 }}>Start typing to see the cards this note will create.</p>}
         </div>

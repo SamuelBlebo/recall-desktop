@@ -3,7 +3,7 @@ import { S, answerCard, deckById, deckFullName, deckWithChildren, patchCards, un
 import { counts, nextDueAfterNow, pickNext } from "../lib/queue";
 import { previewIntervals, recallChance } from "../lib/scheduler";
 import { renderCard } from "../lib/cloze";
-import { renderMath } from "../lib/math";
+import { plain, rich } from "../lib/rich";
 import { esc, fmtIvl } from "../lib/util";
 import { toast } from "../lib/toast";
 import { LEARNING, NEW, RELEARNING, REVIEW, type Grade } from "../lib/types";
@@ -186,10 +186,10 @@ export function StudyPage() {
   let body = shown ? faces.answer : faces.question;
   if (faces.expected != null && shown) {
     {
-      const ok = typed.trim().toLowerCase() === faces.expected.trim().toLowerCase();
-      body = faces.question + "<hr>" + renderMath(ok
-        ? `<span class="ok">✓ ${esc(faces.expected)}</span>`
-        : `${typed ? `<span class="bad">${esc(typed)}</span> → ` : ""}<span class="ok">${esc(faces.expected)}</span>`);
+      const ok = typed.trim().toLowerCase() === plain(faces.expected).toLowerCase();
+      body = faces.question + "<hr>" + (ok
+        ? `<span class="ok">✓ ${rich(faces.expected)}</span>`
+        : `${typed ? `<span class="bad">${esc(typed)}</span> → ` : ""}<span class="ok">${rich(faces.expected)}</span>`);
     }
   }
   // long answers read better left-aligned, like a paragraph, than centered
