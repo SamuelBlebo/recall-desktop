@@ -1,6 +1,6 @@
 import {
   createUserWithEmailAndPassword, GoogleAuthProvider, sendPasswordResetEmail,
-  signInWithEmailAndPassword, signInWithPopup, signOut as fbSignOut,
+  signInWithEmailAndPassword, signInWithPopup,
 } from "firebase/auth";
 import { fb } from "./firebase";
 
@@ -8,7 +8,8 @@ export const signInEmail = (email: string, password: string) => signInWithEmailA
 export const signUpEmail = (email: string, password: string) => createUserWithEmailAndPassword(fb().auth, email, password);
 export const signInGoogle = () => signInWithPopup(fb().auth, new GoogleAuthProvider());
 export const resetPassword = (email: string) => sendPasswordResetEmail(fb().auth, email);
-export const signOut = () => fbSignOut(fb().auth);
+/** Saves pending changes, signs out and clears this device's copy of the cards. */
+export const signOut = async () => (await import("./sync")).signOutAndClear();
 
 /** Turns Firebase error codes into plain sentences. */
 export function authError(e: unknown): string {

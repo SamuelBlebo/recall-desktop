@@ -1,8 +1,9 @@
 import {
-  collection, doc, getDocs, onSnapshot, query, serverTimestamp, Timestamp, where, writeBatch,
+  clearIndexedDbPersistence, collection, doc, getDocs, onSnapshot, query, serverTimestamp, terminate, Timestamp,
+  waitForPendingWrites, where, writeBatch,
   type DocumentData, type QueryDocumentSnapshot, type Unsubscribe,
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { fb } from "./firebase";
 import { setSync } from "./status";
 import type { Persist } from "../persist";
@@ -27,6 +28,40 @@ const stable = (o: DocumentData) => JSON.stringify(o, Object.keys(o).sort());
 const strip = ({ _u, _d, ...rest }: DocumentData) => rest;
 // lastBackup is per device, so it is never synced
 const cloudSettings = ({ lastBackup, ...rest }: Settings) => rest;
+
+/*
+ * The cards stored on a device belong to one account at a time, so friends can share a
+ * browser or PC without their cards mixing. "recall-owner" remembers whose they are.
+ * Signing out saves pending changes to the cloud and then empties the device; signing in
+ * as someone else on a device that still holds another account's cards backs them up and
+ * empties it first. Cards made without an account go to the first account that signs in.
+ */
+const OWNER = "recall-owner";
+const syncKey = (uid: string) => `recall-sync:${uid}`;
+const EMPTY: Snapshot = { decks: [], notes: [], cards: [], revlog: [], settings: {} };
+
+function ls(f: (s: Storage) => unknown) {
+  try {
+    return f(localStorage);
+  } catch {
+    return undefined;
+  }
+}
+/** Whose cards are on this device: the recorded owner, or (from before owners were recorded) whoever synced here. */
+function deviceOwner(): string {
+  const owner = ls((s) => s.getItem(OWNER)) as string | null | undefined;
+  if (owner) return owner;
+  const keys = (ls((s) => Object.keys(s)) as string[] | undefined) ?? [];
+  return keys.find((k) => k.startsWith("recall-sync:"))?.slice("recall-sync:".length) ?? "";
+}
+
+let active: SyncedPersist | undefined;
+
+/** Signs out after the latest changes reach the cloud, then empties this device. Throws if they can't be saved. */
+export async function signOutAndClear() {
+  if (!active) return signOut(fb().auth);
+  await active.leave();
+}
 
 export class SyncedPersist implements Persist {
   kind;
@@ -137,9 +172,23 @@ export class SyncedPersist implements Persist {
 
   start(onRemote: (c: RemoteChanges) => void) {
     const { auth } = fb();
-    onAuthStateChanged(auth, (user) => {
+    active = this;
+    onAuthStateChanged(auth, async (user) => {
       this.signedOut = !user;
       if (user) {
+        const owner = deviceOwner();
+        if (owner && owner !== user.uid) {
+          // another account's cards are still here: keep a backup, empty the device, start fresh
+          this.signedOut = true;
+          setSync({ state: "syncing", email: user.email ?? "", error: "" });
+          const s = this.getSnapshot();
+          if (s.notes.length || s.revlog.length)
+            await this.local.backup(10).catch((e) => console.error("Backup before switching accounts failed", e));
+          await this.forget();
+          location.reload();
+          return;
+        }
+        ls((s) => s.setItem(OWNER, user.uid));
         setSync({ state: "syncing", email: user.email ?? "", error: "" });
         this.connect(user.uid, onRemote).catch((e) => {
           console.error(e);
@@ -153,6 +202,37 @@ export class SyncedPersist implements Persist {
     });
   }
 
+  /** Saves everything to the cloud, signs out, empties this device and reloads. */
+  async leave() {
+    const uid = this.uid;
+    clearTimeout(this.flushTimer);
+    this.flush();
+    if (uid) {
+      const saved = await Promise.race([
+        waitForPendingWrites(fb().db).then(() => true),
+        new Promise<boolean>((ok) => setTimeout(() => ok(false), 15_000)),
+      ]);
+      if (!saved) throw new Error("Couldn't reach the cloud to save your latest changes. Check your internet and try again.");
+    }
+    this.signedOut = true;
+    await signOut(fb().auth);
+    this.disconnect();
+    await this.forget();
+    // Firestore's own offline copy of this account's data goes too
+    await terminate(fb().db).then(() => clearIndexedDbPersistence(fb().db)).catch((e) => console.error(e));
+    location.reload();
+  }
+
+  /** Empties local storage without touching the cloud. */
+  private async forget() {
+    this.pending = [];
+    await this.local.replaceAll(EMPTY);
+    ls((s) => {
+      s.removeItem(OWNER);
+      Object.keys(s).filter((k) => k.startsWith("recall-sync:")).forEach((k) => s.removeItem(k));
+    });
+  }
+
   private disconnect() {
     this.unsubs.forEach((u) => u());
     this.unsubs = [];
@@ -162,7 +242,7 @@ export class SyncedPersist implements Persist {
   private async connect(uid: string, onRemote: (c: RemoteChanges) => void) {
     this.disconnect();
     const { db } = fb();
-    const key = `recall-sync:${uid}`;
+    const key = syncKey(uid);
     let since = 0;
     try {
       since = Number(localStorage.getItem(key) || 0);

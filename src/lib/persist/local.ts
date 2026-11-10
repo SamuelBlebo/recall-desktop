@@ -75,6 +75,7 @@ export class BrowserPersist implements Persist {
   deleteRevlog = this.schedule;
   saveSettings = this.schedule;
   replaceAll = async (s: Snapshot) => {
+    clearTimeout(this.timer); // a queued save must not overwrite this
     await this.write(s);
   };
 

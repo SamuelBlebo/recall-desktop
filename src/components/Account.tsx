@@ -56,20 +56,35 @@ export function SyncCard() {
       <p className="ptitle" style={{ fontSize: 15 }}>Cloud sync</p>
       {s.state === "signedOut" || s.state === "off" ? (
         <>
-          <p className="psub small">Sign in to keep your cards in sync between this {isDesktop() ? "PC" : "browser"}, the desktop app and the web version. Cards already here are uploaded the first time.</p>
+          <p className="psub small">Sign in to keep your cards in sync between this {isDesktop() ? "PC" : "browser"}, the desktop app and the web version. Each person gets their own account. Cards already on this {isDesktop() ? "PC" : "browser"} go into the first account that signs in here.</p>
           <SignInForm />
         </>
       ) : (
         <>
           <p className="psub small">Signed in as <b>{s.email}</b> · {syncLabel(s)}</p>
+          <p className="psub small">Signing out saves your changes to your account and removes your cards from this {isDesktop() ? "PC" : "browser"}, so someone else can sign in here. They come back when you sign in again.</p>
           {s.error && <p className="psub small" style={{ color: "var(--again)" }}>{s.error}</p>}
           <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn" onClick={async () => (await (await auth()).signOut(), toast("Signed out. Your cards stay on this device."))}>Sign out</button>
+            <SignOutButton />
           </div>
         </>
       )}
     </div>
   );
+}
+
+function SignOutButton() {
+  const [busy, setBusy] = useState(false);
+  const leave = async () => {
+    setBusy(true);
+    try {
+      await (await auth()).signOut(); // reloads the app once this device is cleared
+    } catch (e) {
+      toast(String((e as Error)?.message || e), 6000);
+      setBusy(false);
+    }
+  };
+  return <button className="btn" disabled={busy} onClick={leave}>{busy ? "Saving and signing out…" : "Sign out"}</button>;
 }
 
 /** Full-screen sign-in shown on the web version until you sign in (or choose to stay local). */
@@ -78,7 +93,7 @@ export function WebSignIn({ onSkip }: { onSkip: () => void }) {
     <div className="loading" style={{ padding: 16 }}>
       <div className="card pad" style={{ width: "min(420px, 100%)" }}>
         <p className="ptitle">Sign in to Recall</p>
-        <p className="psub small">Your decks and reviews sync with the desktop app and any other device you sign in on.</p>
+        <p className="psub small">Your decks and reviews are private to your account and sync to any device you sign in on. New here? Enter your email and a password (6+ characters) and press <b>Create account</b>, or continue with Google.</p>
         <SignInForm />
         <button className="btn sm ghost" style={{ marginTop: 6 }} onClick={onSkip}>Use without an account (this browser only)</button>
       </div>
